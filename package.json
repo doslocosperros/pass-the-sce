@@ -1,0 +1,11 @@
+{
+  "name": "pass-the-ace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local multiplayer Pass the Ace (2-6 players, hotspot/LAN, no internet).",
+  "scripts": {
+    "start": "node server/relay.js",
+    "test": "node test/engine.test.js && node test/relay.test.js"
+  },
+  "dependencies": { "ws": "^8.18.0" }
+}

@@ -11,7 +11,7 @@
   const P = Host.prototype;
 
   P.lobbyView = function (forId) {
-    return { phase: 'lobby', meId: forId, maxSeats: this.maxSeats, fillBots: this.fillBots, code: this.code,
+    return { phase: 'lobby', practice: !!this.practice, meId: forId, maxSeats: this.maxSeats, fillBots: this.fillBots, code: this.code,
       seats: this.players.map((p) => ({ id: p.id, name: p.name, isBot: p.isBot, connected: p.connected })) };
   };
   P.push = function () {

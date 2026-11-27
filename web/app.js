@@ -28,7 +28,7 @@
       <h1>♠ Pass the Ace ♥</h1>
       <p class="sub">Local multiplayer · 2–6 players · no internet needed</p>
       <input id="name" maxlength="14" placeholder="Your name" value="${esc(store.get('name'))}">
-      <div class="row"><button id="hostBtn" class="gold">Host a game</button></div>
+      <div class="row"><button id="hostBtn" class="gold">Host a game</button><button id="practiceBtn">Practice vs bots</button></div>
       <div class="or">— or join —</div>
       ${native ? '<input id="addr" placeholder="Host address (e.g. 192.168.43.1)" inputmode="decimal" value="' + esc(store.get('addr')) + '">' : ''}
       <div class="row"><input id="code" maxlength="4" placeholder="CODE" class="code"><button id="joinBtn">Join</button></div>
@@ -40,6 +40,7 @@
     const addr = () => { const e = document.getElementById('addr'); const a = e ? e.value.trim() : ''; if (e) store.set('addr', a); return a; };
     document.getElementById('hostBtn').onclick = () => { Sound.unlock(); startHost(name()); };
     document.getElementById('joinBtn').onclick = () => { Sound.unlock(); startJoin(name(), document.getElementById('code').value.trim().toUpperCase(), addr(), null); };
+    document.getElementById('practiceBtn').onclick = () => { Sound.unlock(); startPractice(name()); };
     const rj = document.getElementById('rejoin');
     if (rj) rj.onclick = () => { Sound.unlock(); startJoin(sess.name, sess.code, sess.addr, { id: sess.id, token: sess.token }); };
     document.getElementById('mute').onclick = (e) => { Sound.toggle(); e.target.textContent = Sound.muted ? '🔇 Sound off' : '🔊 Sound on'; };
@@ -61,6 +62,14 @@
         else if (m.t === 'peer-msg') host.peerMsg(m.id, m.msg);
       },
     }, { host: true });
+  }
+
+  // Solo / single-file mode: the host engine runs locally with bots, no relay or network needed.
+  function startPractice(name) {
+    leaving = false; role = 'host'; myId = 'host';
+    net = { send() {}, close() {} };
+    host = new Host(net, name, render); host.practice = true; host.code = '';
+    host.maxSeats = 4; host.push();
   }
 
   // ---------- client (with auto-reconnect) ----------
@@ -115,9 +124,9 @@
     }
     app.innerHTML = '';
     app.append($(`<section class="panel center">
-      <h2>Table code</h2>
-      <div class="bigcode">${esc(v.code || '')}</div>
-      ${isHost ? `<div class="qr">${url ? qrSvg(url) : ''}</div>
+      <h2>${v.practice ? 'Practice table' : 'Table code'}</h2>
+      ${v.practice ? '' : `<div class="bigcode">${esc(v.code || '')}</div>`}
+      ${isHost && v.practice ? '<p class="sub">Play against bots on this device.</p>' : isHost ? `<div class="qr">${url ? qrSvg(url) : ''}</div>
         <p class="sub">Scan with the phone camera, or open<br><b>${esc(Net.hostLabel())}</b> and enter the code.</p>` : '<p class="sub">Waiting for the host to start…</p>'}
       ${isHost ? `<div class="row"><label>Players
           <select id="seats">${[2, 3, 4, 5, 6].map((n) => `<option ${n === v.maxSeats ? 'selected' : ''}>${n}</option>`).join('')}</select></label>

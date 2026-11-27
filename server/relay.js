@@ -23,7 +23,8 @@ const server = http.createServer((req, res) => {
 });
 
 const wss = new WebSocketServer({ server, path: '/ws' });
-const rooms = new Map(); // code -> { host: ws, peers: Map<id, ws>, next: number }
+const crypto = require('crypto');
+const rooms = new Map(); // code -> { host: ws, peers: Map<id, ws>, tokens: Map<id, token>, next: number }
 
 function code() {
   const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -39,15 +40,19 @@ wss.on('connection', (ws) => {
     let m; try { m = JSON.parse(raw); } catch { return; }
     if (m.t === 'host' && !ws.room) {
       const c = code();
-      rooms.set(c, { host: ws, peers: new Map(), next: 1 });
+      rooms.set(c, { host: ws, peers: new Map(), tokens: new Map(), next: 1 });
       ws.room = c; ws.isHost = true;
       send(ws, { t: 'hosting', code: c });
     } else if (m.t === 'join' && !ws.room) {
       const r = rooms.get(String(m.code || '').toUpperCase());
       if (!r) return send(ws, { t: 'error', msg: 'No game with that code.' });
-      const id = 'p' + r.next++;
+      let id, token;
+      if (m.rejoin && r.tokens.get(m.rejoin.id) && r.tokens.get(m.rejoin.id) === m.rejoin.token) {
+        id = m.rejoin.id; token = m.rejoin.token;            // same seat, new socket
+        const old = r.peers.get(id); if (old && old !== ws) { old.pid = null; old.room = null; old.close(); }
+      } else { id = 'p' + r.next++; token = crypto.randomBytes(8).toString('hex'); r.tokens.set(id, token); }
       r.peers.set(id, ws); ws.room = String(m.code).toUpperCase(); ws.pid = id;
-      send(ws, { t: 'joined', id });
+      send(ws, { t: 'joined', id, token });
       send(r.host, { t: 'peer-join', id, name: String(m.name || '').slice(0, 14) });
     } else if (m.t === 'send' && ws.isHost) {          // host -> peers
       const r = rooms.get(ws.room); if (!r) return;
@@ -60,7 +65,7 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     const r = rooms.get(ws.room); if (!r) return;
     if (ws.isHost) { r.peers.forEach((p) => { send(p, { t: 'host-left' }); p.close(); }); rooms.delete(ws.room); }
-    else { r.peers.delete(ws.pid); send(r.host, { t: 'peer-leave', id: ws.pid }); }
+    else if (ws.pid && r.peers.get(ws.pid) === ws) { r.peers.delete(ws.pid); send(r.host, { t: 'peer-leave', id: ws.pid }); }
   });
 });
 

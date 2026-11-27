@@ -42,3 +42,14 @@ label { display: flex; gap: 8px; align-items: center; } label.chk { font-size: .
 .controls button { min-width: 130px; font-size: 1.05rem; } .wait { color: #9fb3c6; } .win { font-size: 1.5rem; color: var(--gold); width: 100%; text-align: center; }
 @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 @media (max-width: 480px) { .seat { width: 68px; } .card { width: 38px; height: 54px; } .card.big { width: 54px; height: 76px; } }
+
+/* polish */
+#toast { position: fixed; top: calc(env(safe-area-inset-top) + 8px); left: 50%; transform: translateX(-50%); background: #7a1620; color: #fff; padding: 8px 16px; border-radius: 20px; z-index: 10; font-size: .9rem; }
+#toast[hidden] { display: none; }
+.qr { width: 170px; margin: 6px auto; background: #fff; padding: 4px; border-radius: 8px; } .qr svg { display: block; width: 100%; height: auto; }
+.card.flip { animation: flip .45s ease-out; } .card.dealin { animation: dealin .45s ease-out; }
+.card.pulse { animation: pulse .5s ease-out; } .card.nudge { animation: shake .45s; }
+@keyframes flip { from { transform: rotateY(90deg) scale(.9); } to { transform: none; } }
+@keyframes dealin { from { transform: translateY(-60px) scale(.4) rotate(-20deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pulse { 40% { transform: scale(1.22); } }
+@media (prefers-reduced-motion: reduce) { .card { animation: none !important; } }

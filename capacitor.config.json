@@ -1,0 +1,7 @@
+{
+  "appId": "com.passtheace.app",
+  "appName": "Pass the Ace",
+  "webDir": "web",
+  "server": { "androidScheme": "http", "cleartext": true },
+  "android": { "allowMixedContent": true }
+}

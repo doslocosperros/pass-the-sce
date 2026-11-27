@@ -33,7 +33,7 @@
     for (let k = 1; k <= n; k++) { const j = (i + k) % n; if (s.players[j].lives > 0) return j; }
     return i;
   }
-  const say = (s, m) => { s.log.push(m); if (s.log.length > 30) s.log.shift(); };
+  const say = (s, m, type, ids) => { s.log.push(m); if (s.log.length > 30) s.log.shift(); s.ev = { n: ((s.ev && s.ev.n) || 0) + 1, type: type || 'info', ids: ids || [] }; };
 
   function startRound(s) {
     s.round++;
@@ -43,7 +43,7 @@
     alive(s).forEach((p) => { p.card = s.deck.pop(); });
     s.dealer = nextAlive(s, s.dealer < 0 ? s.players.length - 1 : s.dealer);
     s.turn = nextAlive(s, s.dealer);
-    say(s, `Round ${s.round} — ${s.players[s.dealer].name} deals.`);
+    say(s, `Round ${s.round} — ${s.players[s.dealer].name} deals.`, 'deal');
   }
 
   function actor(s) { return s.players[s.turn]; }
@@ -57,7 +57,7 @@
     losers.forEach((p) => { p.lives--; });
     s.phase = 'reveal';
     s.reveal = { cards, losers: losers.map((p) => p.id), low };
-    say(s, `Low card ${label(low)} — ${losers.map((p) => p.name).join(' & ')} lose${losers.length === 1 ? 's' : ''} a life.`);
+    say(s, `Low card ${label(low)} — ${losers.map((p) => p.name).join(' & ')} lose${losers.length === 1 ? 's' : ''} a life.`, 'lose', losers.map((p) => p.id));
   }
 
   // action: 'keep' | 'swap'
@@ -69,14 +69,14 @@
       if (s.turn === s.dealer) {
         const top = s.deck.pop();
         s.deck.unshift(me.card); me.card = top;
-        say(s, `${me.name} (dealer) swaps with the deck.`);
+        say(s, `${me.name} (dealer) swaps with the deck.`, 'deck', [me.id]);
       } else {
         const t = swapTarget(s);
-        if (t.card.rank === 13) { t.kingShown = true; say(s, `${t.name} blocks ${me.name} with a King!`); }
-        else { const c = me.card; me.card = t.card; t.card = c; say(s, `${me.name} swaps with ${t.name}.`); }
+        if (t.card.rank === 13) { t.kingShown = true; say(s, `${t.name} blocks ${me.name} with a King!`, 'block', [t.id, me.id]); }
+        else { const c = me.card; me.card = t.card; t.card = c; say(s, `${me.name} swaps with ${t.name}.`, 'swap', [me.id, t.id]); }
       }
     } else if (action === 'keep') {
-      say(s, `${me.name} keeps.`);
+      say(s, `${me.name} keeps.`, 'keep', [me.id]);
     } else return false;
     if (s.turn === s.dealer) resolve(s); else s.turn = nextAlive(s, s.turn);
     return true;
@@ -86,8 +86,8 @@
   function advance(s) {
     if (s.phase !== 'reveal') return;
     const al = alive(s);
-    if (al.length === 0) { s.phase = 'over'; s.winners = s.reveal.losers.slice(); say(s, 'Everyone fell together — tie!'); }
-    else if (al.length === 1) { s.phase = 'over'; s.winners = [al[0].id]; say(s, `${al[0].name} wins!`); }
+    if (al.length === 0) { s.phase = 'over'; s.winners = s.reveal.losers.slice(); say(s, 'Everyone fell together — tie!', 'win'); }
+    else if (al.length === 1) { s.phase = 'over'; s.winners = [al[0].id]; say(s, `${al[0].name} wins!`, 'win', [al[0].id]); }
     else startRound(s);
   }
 
@@ -110,7 +110,7 @@
       turnId: s.phase === 'play' ? actor(s).id : null,
       targetId: s.phase === 'play' && swapTarget(s) ? swapTarget(s).id : null,
       meId: id, myCard: me && me.card, log: s.log.slice(-6),
-      reveal: s.reveal, winners: s.winners,
+      reveal: s.reveal, winners: s.winners, ev: s.ev,
       seats: s.players.map((p) => ({
         id: p.id, name: p.name, isBot: p.isBot, lives: p.lives, alive: p.lives > 0,
         hasCard: p.card !== null,

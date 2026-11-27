@@ -31,6 +31,8 @@
     this.players.push({ id: 'bot' + n + '_' + Date.now() % 1000, name: 'Bot ' + n, isBot: true, connected: true }); this.push();
   };
   P.peerJoin = function (id, name) {
+    const ex = this.players.find((p) => p.id === id);
+    if (ex) { ex.connected = true; if (name && !this.game) ex.name = name; this.push(); return; } // rejoin
     if (this.game || this.players.length >= this.maxSeats) { this.net.send({ t: 'send', to: id, msg: { t: 'full' } }); return; }
     this.players.push({ id, name: name || 'Player', isBot: false, connected: true }); this.push();
   };

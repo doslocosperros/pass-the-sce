@@ -5,7 +5,15 @@
   "description": "Local multiplayer Pass the Ace (2-6 players, hotspot/LAN, no internet).",
   "scripts": {
     "start": "node server/relay.js",
-    "test": "node test/engine.test.js && node test/relay.test.js"
+    "test": "node test/engine.test.js && node test/relay.test.js",
+    "android:sync": "cap sync android"
   },
-  "dependencies": { "ws": "^8.18.0" }
+  "dependencies": {
+    "@capacitor/android": "^7.6.11",
+    "@capacitor/core": "^7.6.11",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.6.11"
+  }
 }
